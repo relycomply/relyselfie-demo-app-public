@@ -63,7 +63,7 @@ Uploads images to a GraphQL endpoint.
 
 **Usage:**
 ```javascript
-await uploadImages(images, customerId);
+await uploadImages(imagesWithScores, customerId);
 ```
 
 ---
