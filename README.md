@@ -180,7 +180,7 @@ relyselfie-demo-app/
 
 ## Documentation
 
-For module usage instructions, refer to the [RelySelfie Usage Guide](./src/utils/README.md).
+For module usage instructions, refer to the [RelySelfie Usage Guide](./src/relyselfie/README.md).
 
 For server usage instructions, refer to the [RelySelfie Proxy Server Guide](./server/README.md).
 
