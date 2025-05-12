@@ -34,7 +34,7 @@ Analyzes an image and returns feedback based on brightness, blur, face confidenc
 **Returns:**
 An object containing:
 - `status`: "capture" or "analyzing".
-- `confidence`: Overall confidence score.
+- `score`: Overall confidence score.
 - `metrics`: Brightness, blur, face confidence, coverage, age, and gender.
 - `directives`: List of actionable feedback.
 - `timestamp`: Timestamp of the analysis.
