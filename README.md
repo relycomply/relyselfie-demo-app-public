@@ -50,18 +50,21 @@ It correctly bundles React in production mode and optimizes the build for the be
 Example `.env` file:
 
 ```env
-GENERATE_SOURCEMAP=false
-REACT_APP_UPLOAD_URL=http://localhost:5999/api/upload-images/
+# Face Detection and Analysis Configuration
 REACT_APP_NUM_IMAGES_TO_CAPTURE=3
 REACT_APP_NUM_IMAGES_TO_UPLOAD=2
+REACT_APP_UPLOAD_URL=http://localhost:5999/api/upload-images/
 
-#THRESHOLDS
+# Analysis Performance Settings
+REACT_APP_ANALYSIS_INTERVAL=150
+
+# Quality Thresholds (optimized for performance across all devices)
 REACT_APP_BRIGHTNESS_MIN=80
 REACT_APP_BRIGHTNESS_MAX=200
-REACT_APP_BLUR_MIN=30
-REACT_APP_COVERAGE_MIN=25
-REACT_APP_FACE_CENTERING_MIN_X=0.4
-REACT_APP_FACE_CENTERING_MAX_X=0.6
+REACT_APP_BLUR_MIN=15
+REACT_APP_COVERAGE_MIN=20
+REACT_APP_FACE_CENTERING_MIN_X=0.35
+REACT_APP_FACE_CENTERING_MAX_X=0.65
 ```
 
 

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Pages.css';
 import { analyzeImage, loadFaceApiModels } from 'relyselfie';
@@ -16,6 +16,57 @@ function CameraCapture() {
   const [capturingMessage, setCapturingMessage] = useState('');
   const [showJson, setShowJson] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  const takePhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video && canvas) {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Flip the context horizontally for capturing (otherwise movement is weird)
+      context.save();
+      context.scale(-1, 1);
+      context.translate(-canvas.width, 0);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      context.restore();
+
+      return canvas.toDataURL('image/jpeg');
+    }
+    return null;
+  };
+
+  const captureImages = useCallback(async () => {
+    if (capturing) return;
+    setCapturing(true);
+    setCapturingMessage('Capturing images... Please hold still.');
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const imagesWithScores = [];
+
+    for (let i = 0; i < process.env.REACT_APP_NUM_IMAGES_TO_CAPTURE; i++) {
+      const image = takePhoto();
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      
+      const analysis = await analyzeImage(imageData, videoRef.current);
+
+      imagesWithScores.push({ image, score: parseFloat(analysis.score.toFixed(6)) });
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    localStorage.setItem('capturedImages', JSON.stringify(imagesWithScores));
+    setCapturingMessage('');
+
+    const stream = videoRef.current?.srcObject;
+    stream?.getTracks().forEach(track => track.stop());
+
+    navigate('/success');
+  }, [capturing, delay, navigate]);
 
   useEffect(() => {
     const startCamera = async () => {
@@ -61,13 +112,14 @@ function CameraCapture() {
     };
   }, []);
 
-  // Analysis loop
+  // Analysis loop with mobile performance optimizations
   useEffect(() => {
     if (!isVideoReady) return;
 
     let animationFrame;
+    let lastAnalysisTime = 0;
     
-    const analyzeFrame = async () => {
+    const renderAndAnalyze = async () => {
       if (videoRef.current && canvasRef.current) {
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -77,85 +129,42 @@ function CameraCapture() {
         canvas.height = video.videoHeight;
         
         if (canvas.width > 0 && canvas.height > 0) {
-          // Flip the context horizontally for capturing (otherwise movement is weird)
           context.save();
           context.scale(-1, 1);
           context.translate(-canvas.width, 0);
           context.drawImage(video, 0, 0);
           context.restore();
 
-          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          // Throttle only the analysis, not the rendering
+          const now = performance.now();
+          const analysisInterval = parseInt(process.env.REACT_APP_ANALYSIS_INTERVAL, 10) || 150; // Configurable analysis frequency
           
-          // Pass video reference to analyzeImage for face detection
-          const results = await analyzeImage(imageData, video);
-          setAnalysis(results);
+          if (now - lastAnalysisTime >= analysisInterval) {
+            lastAnalysisTime = now;
+            
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // Pass video reference to analyzeImage for face detection
+            const results = await analyzeImage(imageData, video);
+            setAnalysis(results);
 
-          // Automatically capture if all directives pass
-          if (results.status === "capture" && !capturing) {
-            captureImages();
+            // Automatically capture if all directives pass
+            if (results.status === "capture" && !capturing) {
+              captureImages();
+            }
           }
         }
       }
       
-      animationFrame = requestAnimationFrame(analyzeFrame);
+      animationFrame = requestAnimationFrame(renderAndAnalyze);
     };
     
-    analyzeFrame();
+    renderAndAnalyze();
     
     return () => {
       cancelAnimationFrame(animationFrame);
     };
-  }, [isVideoReady, capturing]);
-
-  const takePhoto = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-
-    if (video && canvas) {
-      const context = canvas.getContext('2d');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      // Flip the context horizontally for capturing (otherwise movement is weird)
-      context.save();
-      context.scale(-1, 1);
-      context.translate(-canvas.width, 0);
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      context.restore();
-
-      return canvas.toDataURL('image/jpeg');
-    }
-    return null;
-  };
-
-  const captureImages = async () => {
-    if (capturing) return;
-    setCapturing(true);
-    setCapturingMessage('Capturing images... Please hold still.');
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    const imagesWithScores = [];
-
-    for (let i = 0; i < process.env.REACT_APP_NUM_IMAGES_TO_CAPTURE; i++) {
-      const image = takePhoto();
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const analysis = await analyzeImage(imageData, videoRef.current);
-
-      imagesWithScores.push({ image, score: parseFloat(analysis.score.toFixed(6)) });
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-
-    localStorage.setItem('capturedImages', JSON.stringify(imagesWithScores));
-    setCapturingMessage('');
-
-    const stream = videoRef.current?.srcObject;
-    stream?.getTracks().forEach(track => track.stop());
-
-    navigate('/success');
-  };
+  }, [isVideoReady, capturing, captureImages]);
 
   const copyToClipboard = () => {
     if (analysis) {
