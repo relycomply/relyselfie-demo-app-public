@@ -1,11 +1,18 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Pages.css';
-import { analyzeImage, loadFaceApiModels } from 'relyselfie';
+import { analyzeImage, loadFaceApiModels } from '../relyselfie/relySelfie';
 import CaptureGuidance from '../components/CaptureGuidance';
 import Toast from '../components/Toast';
 
+// Store the model loading promise at the module level
+let faceApiModelsPromise = null;
+
 function CameraCapture() {
+  // Start loading models as soon as possible
+  if (!faceApiModelsPromise) {
+    faceApiModelsPromise = loadFaceApiModels().catch(err => console.error("Error loading models:", err));
+  }
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const navigate = useNavigate();
@@ -22,7 +29,7 @@ function CameraCapture() {
     const canvas = canvasRef.current;
 
     if (video && canvas) {
-      const context = canvas.getContext('2d');
+      const context = canvas.getContext('2d', { willReadFrequently: true });
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
@@ -43,6 +50,11 @@ function CameraCapture() {
     setCapturing(true);
     setCapturingMessage('Capturing images... Please hold still.');
 
+    // Wait for models to load before capturing
+    if (faceApiModelsPromise) {
+      await faceApiModelsPromise;
+    }
+
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const imagesWithScores = [];
@@ -50,9 +62,9 @@ function CameraCapture() {
     for (let i = 0; i < process.env.REACT_APP_NUM_IMAGES_TO_CAPTURE; i++) {
       const image = takePhoto();
       const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
+  const context = canvas.getContext('2d', { willReadFrequently: true });
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      
+
       const analysis = await analyzeImage(imageData, videoRef.current);
 
       imagesWithScores.push({ image, score: parseFloat(analysis.score.toFixed(6)) });
@@ -90,9 +102,7 @@ function CameraCapture() {
     };
   }, []);
 
-  useEffect(() => {
-    loadFaceApiModels().catch(err => console.error("Error loading models:", err));
-  }, []);
+
 
   // Video loaded and ready
   useEffect(() => {
@@ -118,16 +128,16 @@ function CameraCapture() {
 
     let animationFrame;
     let lastAnalysisTime = 0;
-    
+
     const renderAndAnalyze = async () => {
       if (videoRef.current && canvasRef.current) {
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
+  const context = canvas.getContext('2d', { willReadFrequently: true });
 
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        
+
         if (canvas.width > 0 && canvas.height > 0) {
           context.save();
           context.scale(-1, 1);
@@ -137,14 +147,18 @@ function CameraCapture() {
 
           // Throttle only the analysis, not the rendering
           const now = performance.now();
-          const analysisInterval = parseInt(process.env.REACT_APP_ANALYSIS_INTERVAL, 10) || 150; // Configurable analysis frequency
-          
+          const analysisInterval = parseInt(process.env.REACT_APP_ANALYSIS_INTERVAL, 10) || 150;
+
           if (now - lastAnalysisTime >= analysisInterval) {
             lastAnalysisTime = now;
-            
+
+            // Wait for models to load before running inference
+            if (faceApiModelsPromise) {
+              await faceApiModelsPromise;
+            }
+
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            
-            // Pass video reference to analyzeImage for face detection
+
             const results = await analyzeImage(imageData, video);
             setAnalysis(results);
 
@@ -155,12 +169,12 @@ function CameraCapture() {
           }
         }
       }
-      
+
       animationFrame = requestAnimationFrame(renderAndAnalyze);
     };
-    
+
     renderAndAnalyze();
-    
+
     return () => {
       cancelAnimationFrame(animationFrame);
     };
