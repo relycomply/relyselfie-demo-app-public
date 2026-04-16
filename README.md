@@ -1,15 +1,25 @@
 # RelySelfie Demo App
 
-A React-based demo application that showcases a simple selfie capture flow with face positioning guidance and multi-shot capture.
-
+A React-based demo application that showcases a simple selfie capture flow with face positioning guidance and multi-shot capture. **Optimized for performance with reduced model loading times and efficient real-time analysis across all devices.**
 
 ## Features
 
 - 🎨 Customizable theme color
 - 📸 Multi-shot capture
 - 👤 Face outline guidance
-- 📱 Mobile-friendly
+- ⚡ Performance optimized for all devices
 - 🏆 Optimal image selection
+- 🔧 Configurable analysis quality vs performance trade-offs
+
+## Performance Optimizations
+
+This app includes several optimizations for all devices:
+
+- **Reduced Model Loading**: Only loads essential face detection models (~271KB vs ~15MB)
+- **Throttled Analysis**: Optimized analysis frequency (6-7fps) for smooth performance
+- **Sampled Image Processing**: Uses pixel sampling for brightness/blur detection
+- **Simplified Algorithms**: Optimized blur detection with reduced computational complexity
+- **Adaptive Quality**: Automatically adjusts processing quality based on image size
 
 ## Getting Started
 
@@ -47,24 +57,43 @@ It correctly bundles React in production mode and optimizes the build for the be
 
 ### Environment Variables
 
-Example `.env` file:
+Copy `.env.example` to `.env` and adjust values as needed. See comments in `.env.example` for detailed guidance.
 
 ```env
-# Face Detection and Analysis Configuration
+# General
+GENERATE_SOURCEMAP=false
+REACT_APP_UPLOAD_URL=http://localhost:5999/api/upload-images/
 REACT_APP_NUM_IMAGES_TO_CAPTURE=3
 REACT_APP_NUM_IMAGES_TO_UPLOAD=2
-REACT_APP_UPLOAD_URL=http://localhost:5999/api/upload-images/
+
+# Crop captured image to face bounding box (-1 = no crop, 0 = tight crop, >0 = padding in px)
+REACT_APP_CROP_PADDING=-1
 
 # Analysis Performance Settings
+# Milliseconds between face analysis runs (150ms ≈ 6-7fps)
 REACT_APP_ANALYSIS_INTERVAL=150
 
-# Quality Thresholds (optimized for performance across all devices)
-REACT_APP_BRIGHTNESS_MIN=80
-REACT_APP_BRIGHTNESS_MAX=200
-REACT_APP_BLUR_MIN=15
+# Camera Settings
+REACT_APP_CAMERA_WIDTH=640
+REACT_APP_CAMERA_HEIGHT=480
+REACT_APP_CAMERA_FRAME_RATE=30
+
+# Quality Thresholds (0-100 scale)
+REACT_APP_BRIGHTNESS_MIN=31
+REACT_APP_BRIGHTNESS_MAX=78
+REACT_APP_BLUR_MIN=4
 REACT_APP_COVERAGE_MIN=20
+REACT_APP_EYES_OPEN_MIN=50
 REACT_APP_FACE_CENTERING_MIN_X=0.35
 REACT_APP_FACE_CENTERING_MAX_X=0.65
+
+# Score Weights (must sum to 1.0)
+REACT_APP_WEIGHT_BRIGHTNESS=0.10
+REACT_APP_WEIGHT_BLUR=0.10
+REACT_APP_WEIGHT_FACE=0.20
+REACT_APP_WEIGHT_COVERAGE=0.20
+REACT_APP_WEIGHT_EYES_OPEN=0.20
+REACT_APP_WEIGHT_CENTERING=0.20
 ```
 
 

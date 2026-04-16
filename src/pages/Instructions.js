@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Pages.css';
 import {
@@ -7,9 +8,14 @@ import {
   CheckCircle,
   Visibility
 } from '@mui/icons-material';
+import { loadFaceApiModels } from 'relyselfie';
 
 function Instructions() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    loadFaceApiModels().catch(() => {});
+  }, []);
 
   const instructions = [
     {
@@ -55,4 +61,4 @@ function Instructions() {
   );
 }
 
-export default Instructions; 
+export default Instructions;

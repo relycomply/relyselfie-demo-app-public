@@ -57,9 +57,9 @@ Uploads images to a GraphQL endpoint.
 - `customerId` (string): Customer ID to associate with the images.
 
 **Environment Variable Required (in root app):**
-- REACT_APP_NUM_IMAGES_TO_CAPTURE=3
-- REACT_APP_NUM_IMAGES_TO_UPLOAD=2
-- REACT_APP_UPLOAD_URL=http://localhost:5999/api/upload-images/
+- `REACT_APP_NUM_IMAGES_TO_CAPTURE` — Number of images to capture per session (default: 3)
+- `REACT_APP_NUM_IMAGES_TO_UPLOAD` — Number of best-scored images to upload (default: 2)
+- `REACT_APP_UPLOAD_URL` — Proxy endpoint for image uploads
 
 **Usage:**
 ```javascript
@@ -70,12 +70,66 @@ await uploadImages(imagesWithScores, customerId);
 
 ## Configuration
 
-Ensure the following environment variables are set in the root of the app:
+All environment variables are set in a `.env` file at the root of the app. Copy `.env.example` to `.env` to get started.
+
+### General
 
 ```env
+REACT_APP_UPLOAD_URL=http://localhost:5999/api/upload-images/
 REACT_APP_NUM_IMAGES_TO_CAPTURE=3
 REACT_APP_NUM_IMAGES_TO_UPLOAD=2
-REACT_APP_UPLOAD_URL=http://localhost:5999/api/upload-images/ # Proxy endpoint for image uploads
+```
+
+### Image Cropping
+
+```env
+# Crop captured image to face bounding box
+# -1 = no crop, 0 = tight crop, >0 = padding in pixels (recommended: 50)
+REACT_APP_CROP_PADDING=-1
+```
+
+### Analysis Performance
+
+```env
+# Milliseconds between face analysis runs (150ms ≈ 6-7fps)
+# Lower = more frequent analysis (higher CPU), Higher = better performance
+REACT_APP_ANALYSIS_INTERVAL=150
+```
+
+### Camera Settings
+
+```env
+# Lower resolution = better performance, higher = better quality
+REACT_APP_CAMERA_WIDTH=640
+REACT_APP_CAMERA_HEIGHT=480
+REACT_APP_CAMERA_FRAME_RATE=30
+```
+
+### Quality Thresholds
+
+These control when directives are shown to the user and when capture is triggered.
+
+```env
+REACT_APP_BRIGHTNESS_MIN=31      # Minimum brightness (0-100)
+REACT_APP_BRIGHTNESS_MAX=78      # Maximum brightness (0-100)
+REACT_APP_BLUR_MIN=4             # Minimum sharpness (0-100)
+REACT_APP_COVERAGE_MIN=20        # Minimum face coverage of frame (%)
+REACT_APP_EYES_OPEN_MIN=50       # Minimum eyes-open score (%)
+REACT_APP_FACE_CENTERING_MIN_X=0.35  # Left centering bound (0-1)
+REACT_APP_FACE_CENTERING_MAX_X=0.65  # Right centering bound (0-1)
+```
+
+### Score Weights
+
+Weights used to compute the overall image quality score. Must sum to 1.0.
+
+```env
+REACT_APP_WEIGHT_BRIGHTNESS=0.10
+REACT_APP_WEIGHT_BLUR=0.10
+REACT_APP_WEIGHT_FACE=0.20
+REACT_APP_WEIGHT_COVERAGE=0.20
+REACT_APP_WEIGHT_EYES_OPEN=0.20
+REACT_APP_WEIGHT_CENTERING=0.20
 ```
 
 ---

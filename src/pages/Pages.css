@@ -55,6 +55,21 @@ body.dark-mode {
   background-color: var(--primary-color-dark);
 }
 
+.secondary-button {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.secondary-button:hover {
+  background-color: rgba(0, 123, 255, 0.08);
+}
+
 .camera-container {
   position: relative;
   width: 100%;
@@ -81,17 +96,30 @@ body.dark-mode {
   border-radius: 8px;
 }
 
-.face-outline-hole {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 220px;
-  height: 300px;
-  border: 3px solid var(--primary-color);
-  border-radius: 100px 100px 100px 100px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-  background-color: transparent;
+.face-outline-svg {
+  border-radius: 8px;
+}
+
+/* White oval fade-in animation */
+@keyframes oval-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.face-oval-overlay {
+  opacity: 0;
+  animation: oval-fade-in 0.7s ease forwards;
+}
+
+/* Tick draw-on animation */
+@keyframes tick-draw {
+  from { stroke-dashoffset: 104; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.face-tick {
+  stroke-dashoffset: 104;
+  animation: tick-draw 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .captured-images-grid {
@@ -340,6 +368,10 @@ body.dark-mode {
 
 .directive.quality {
   border-left: 3px solid #2196f3;
+}
+
+.directive.capturing {
+  border-left: 3px solid #4caf50;
 }
 
 .capturing-message {
